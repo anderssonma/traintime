@@ -91,7 +91,10 @@ var kittenGenerator = {
    */
   prepareData: function(data) {
     var obj = data.target.responseXML.documentElement;
+    console.log('Got response!');
+    console.time('xml2json');
     obj = XML2jsobj(obj);
+    console.timeEnd('xml2json');
     var trainInfo = obj.ttitem;
     for (var i = 0; i < trainInfo.length; i++) {
       
