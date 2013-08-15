@@ -8,14 +8,54 @@
  *
  * @type {string}
  */
-var QUERY = 'nature';
-var APIkey = 'df66d1a0b9735350c53708219da3aa7a';
-var triangeln = 7401587;
-var malmoc = 7400003;
-var hbg = 7400044;
-console.log($);
 
-var resrobot = 'https://api.trafiklab.se/samtrafiken/resrobot/Search.json?apiVersion=2.1&from=Triangeln&to=Helsingborg%20C&coordSys=RT90&fromId=7401587&toId=7400044&time=16%3A50&arrival=true&searchType=T&key=' + APIkey;
+
+function XML2jsobj(node) {
+
+  var data = {};
+
+  // append a value
+  function Add(name, value) {
+    if (data[name]) {
+      if (data[name].constructor != Array) {
+        data[name] = [data[name]];
+      }
+      data[name][data[name].length] = value;
+    }
+    else {
+      data[name] = value;
+    }
+  };
+  
+  // element attributes
+  var c, cn;
+  for (c = 0; cn = node.attributes[c]; c++) {
+    Add(cn.name, cn.value);
+  }
+  
+  // child elements
+  for (c = 0; cn = node.childNodes[c]; c++) {
+    if (cn.nodeType == 1) {
+      if (cn.childNodes.length == 1 && cn.firstChild.nodeType == 3) {
+        // text value
+        Add(cn.nodeName, cn.firstChild.nodeValue);
+      }
+      else {
+        // sub-object
+        Add(cn.nodeName, XML2jsobj(cn));
+      }
+    }
+  }
+
+  return data;
+
+}
+
+
+var key = 'df66d1a0b9735350c53708219da3aa7a';
+var fromLocationId = 7401587; // Malmö Triangeln
+var toLocationId = 7400044; // Helsingborg C
+var requestURL = 'https://api.trafiklab.se/samtrafiken/resrobot/Search.xml?callback=jQuery&utf8=%E2%9C%93&apiVersion=2.1&from=Triangeln&to=Helsingborg%20C&coordSys=RT90&fromId=7401587&toId=7400044&time=16%3A50&arrival=true&searchType=T&key=' + key;
 
 var kittenGenerator = {
   /**
@@ -27,14 +67,6 @@ var kittenGenerator = {
    * @type {string}
    * @private
    */
-  searchOnFlickr_: 'https://secure.flickr.com/services/rest/?' +
-      'method=flickr.photos.search&' +
-      'api_key=90485e931f687a9b9c2a66bf58a3861a&' +
-      'text=' + encodeURIComponent(QUERY) + '&' +
-      'safe_search=1&' +
-      'content_type=1&' +
-      'sort=interestingness-desc&' +
-      'per_page=20',
 
   /**
    * Sends an XHR GET request to grab photos of lots and lots of kittens. The
@@ -44,8 +76,8 @@ var kittenGenerator = {
    */
   requestKittens: function() {
     var req = new XMLHttpRequest();
-    req.open('GET', resrobot, true);
-    req.onload = this.showPhotos_.bind(this);
+    req.open('GET', requestURL, true);
+    req.onload = this.prepareData.bind(this);
     req.send(null);
   },
 
@@ -57,11 +89,10 @@ var kittenGenerator = {
    * @param {ProgressEvent} e The XHR ProgressEvent.
    * @private
    */
-  showPhotos_: function (e) {
-    var arr = JSON.parse(e.target.responseText);
-    console.log(arr);
-    var trainInfo = arr.timetableresult.ttitem;
-    console.log(trainInfo);
+  prepareData: function(data) {
+    var obj = data.target.responseXML.documentElement;
+    obj = XML2jsobj(obj);
+    var trainInfo = obj.ttitem;
     for (var i = 0; i < trainInfo.length; i++) {
       
       var dep = trainInfo[i].segment.arrival.datetime;
@@ -76,13 +107,8 @@ var kittenGenerator = {
       p1.innerHTML = '<b>DEPARTS</b>: &nbsp;' + dep;
       p2.innerHTML = '<b>ARRIVES</b>: &nbsp;&nbsp;' + arr;
 
-      var operator = trainInfo[i].segment.segmentid.carrier.id;
-      if (operator === 276) {
-        operator = 'Pågatåg';
-      } else {
-        operator = 'Öresundståg';
-      }
-      console.log(operator);
+      var operator = trainInfo[i].segment.segmentid.mot;
+
       var p3 = document.createElement('p');
       p3.innerHTML = operator;
 
@@ -113,16 +139,12 @@ var kittenGenerator = {
    * @return {string} The kitten's URL.
    * @private
    */
-  constructKittenURL_: function (photo) {
-    return "http://farm" + photo.getAttribute("farm") +
-        ".static.flickr.com/" + photo.getAttribute("server") +
-        "/" + photo.getAttribute("id") +
-        "_" + photo.getAttribute("secret") +
-        "_s.jpg";
-  }
+
 };
 
 // Run our kitten generation script as soon as the document's DOM is ready.
 document.addEventListener('DOMContentLoaded', function () {
-  kittenGenerator.requestKittens();
+  window.setTimeout(function() {
+    kittenGenerator.requestKittens();
+  }, 500);
 });
