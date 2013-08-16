@@ -1,16 +1,20 @@
 {
   "manifest_version": 2,
 
-  "name": "One-click Kittens",
-  "description": "This extension demonstrates a 'browser action' with kittens.",
+  "name": "Traintimes",
+  "description": "This extension pulls train departure data from resrobot.se",
   "version": "1.0",
 
   "browser_action": {
     "default_icon": "icon.png",
     "default_popup": "popup.html"
   },
+  "icons": { 
+    "16": "icon16.png",
+    "48": "icon48.png",
+    "128": "icon128.png"
+  },
   "permissions": [
-    "https://secure.flickr.com/",
     "https://api.trafiklab.se/"
   ]
 }
