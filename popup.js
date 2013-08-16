@@ -16,6 +16,7 @@ function XML2jsobj(node) {
 
   // append a value
   function Add(name, value) {
+    name = name.replace(/:/g, '');
     if (data[name]) {
       if (data[name].constructor != Array) {
         data[name] = [data[name]];
@@ -51,13 +52,17 @@ function XML2jsobj(node) {
 
 }
 
-
+/* RESROBOT API
+===============
 var key = 'df66d1a0b9735350c53708219da3aa7a';
 var fromLocationId = 7401587; // Malmö Triangeln
 var toLocationId = 7400044; // Helsingborg C
 var requestURL = 'https://api.trafiklab.se/samtrafiken/resrobot/Search.xml?callback=jQuery&utf8=%E2%9C%93&apiVersion=2.1&from=Triangeln&to=Helsingborg%20C&coordSys=RT90&fromId=7401587&toId=7400044&time=16%3A50&arrival=true&searchType=T&key=' + key;
+============= */
 
-var kittenGenerator = {
+var requestURL = 'http://www.labs.skanetrafiken.se/v2.2/resultspage.asp?cmdaction=next&selPointFr=malm%F6%20C|80000|0&selPointTo=landskrona|82000|0&LastStart=2013-08-16%2016:38';
+
+var trainTimes = {
   /**
    * Flickr URL that will give us lots and lots of whatever we're looking for.
    *
@@ -74,7 +79,7 @@ var kittenGenerator = {
    *
    * @public
    */
-  requestKittens: function() {
+  requestTrains: function() {
     var req = new XMLHttpRequest();
     req.open('GET', requestURL, true);
     req.onload = this.prepareData.bind(this);
@@ -95,14 +100,16 @@ var kittenGenerator = {
     console.time('xml2json');
     obj = XML2jsobj(obj);
     console.timeEnd('xml2json');
-    var trainInfo = obj.ttitem;
+    console.log(obj);
+    var trainInfo = obj.soapBody.GetJourneyResponse.GetJourneyResult.Journeys.Journey;
+    console.log(trainInfo);
     for (var i = 0; i < trainInfo.length; i++) {
       
-      var dep = trainInfo[i].segment.arrival.datetime;
-      dep = dep.split(' ');
+      var dep = trainInfo[i].DepDateTime;
+      dep = dep.split('T');
       dep = dep[1];
-      var arr = trainInfo[i].segment.departure.datetime;
-      arr = arr.split(' ');
+      var arr = trainInfo[i].ArrDateTime;
+      arr = arr.split('T');
       arr = arr[1];
 
       var p1 = document.createElement('p');
@@ -110,8 +117,8 @@ var kittenGenerator = {
       p1.innerHTML = '<b>DEPARTS</b>: &nbsp;' + dep;
       p2.innerHTML = '<b>ARRIVES</b>: &nbsp;&nbsp;' + arr;
 
-      var operator = trainInfo[i].segment.segmentid.mot;
-
+      var operator = trainInfo[i].RouteLinks.RouteLink.Line.Name;
+      console.log(operator);
       var p3 = document.createElement('p');
       p3.innerHTML = operator;
 
@@ -148,6 +155,6 @@ var kittenGenerator = {
 // Run our kitten generation script as soon as the document's DOM is ready.
 document.addEventListener('DOMContentLoaded', function () {
   window.setTimeout(function() {
-    kittenGenerator.requestKittens();
+    trainTimes.requestTrains();
   }, 500);
 });
